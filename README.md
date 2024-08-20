@@ -17,8 +17,9 @@
 7.	支持Cookie过滤，匹配自定义规则中的条目，然后进行处理（返回403）。
 8.	支持URL过滤，匹配自定义规则中的条目，如果用户请求的URL包含这些，返回403。
 9.	支持URL参数过滤，原理同上。
-10.	支持日志记录，将白名单、拦截日志与未匹配到的日志分开记录。
+10.	支持日志记录，将白名单、拦截日志与未匹配到的日志分开记录到每个server块下定义的日志目录。
 11.	日志记录为JSON格式，便于日志分析，例如使用ELK进行攻击日志收集、存储、搜索和展示。
+12.	支持针对每个server的拦截，而不是全部拦截。
     
 
 ### WAF实现
@@ -62,4 +63,58 @@ services:
 [root@waf test]# cd waf/
 [root@waf waf]# docker-compose up -d
 ```
+
+
+### 全局配置
+在http块下配置，
+```
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+......
+    #全局设置，对所有的server进行限制，只使用一套规则
+    lua_shared_dict limit 50m;
+    lua_package_path "/usr/local/openresty/nginx/conf/waf/?.lua";
+    init_by_lua_file "/usr/local/openresty/nginx/conf/waf/init.lua";
+    access_by_lua_file "/usr/local/openresty/nginx/conf/waf/access.lua";
+......
+}
+```
+
+#### 单个服务配置
+针对某个server的拦截
+```
+server {
+    listen       80;
+    server_name  localhost;
+    
+    set $log_dir "xx";
+
+    #设置sever使用的rule规则，如白名单、黑名单等，达到单独限制某个server的waf功能
+    set $rule_config_dir "/usr/local/openresty/nginx/conf/waf/rule-config";
+    access_by_lua_block {
+        config_rule_dir = ngx.var.rule_config_dir
+        dofile("/usr/local/openresty/nginx/conf/waf/access.lua")
+    }
+
+
+
+    location / {
+        content_by_lua_block {
+            ngx.header.content_type = "text/html"
+
+            -- 获取请求头中的 Host 字段
+            local domain = ngx.var.host
+
+            -- 输出域名到浏览器
+            if domain then
+                ngx.say("Domain: ", domain)
+            else
+                ngx.say("Domain not found ")
+            end
+        }
+    }
+}
+```
+如果要针对多个server进行单独限制那么就根据上述内容修改，主要为`$rule_config_dir`路径。然后在拷贝一下`rule-config`为对应的`$rule_config_dir`设置路径。
 
