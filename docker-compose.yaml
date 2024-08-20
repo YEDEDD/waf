@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  openresty:
+    image: zhaolz/openresty-waf:1.25.3.2
+    container_name: openresty
+    privileged: true
+    volumes:
+      - ./nginx/conf.d:/usr/local/openresty/nginx/conf/conf.d:rw
+      - ./nginx/waf:/usr/local/openresty/nginx/conf/waf:rw
+      - ./nginx/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:rw
+      - ./logs:/tmp/logs
+      - /etc/localtime:/etc/localtime:ro
+    restart: always
+    network_mode: host
