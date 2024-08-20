@@ -33,7 +33,7 @@ config_no_match_check = "off"
 --config waf output redirect/html
 config_waf_output = "html"
 --if config_waf_output ,setting url
-config_waf_redirect_url = "https://waf.yuansuan.cn"
+config_waf_redirect_url = "https://waf.xxxxx.cn"
 config_output_html=[[
 <!DOCTYPE html>
 <html lang="zh-CN">
