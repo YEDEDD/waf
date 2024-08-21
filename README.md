@@ -86,7 +86,7 @@ http {
 }
 ```
 
-#### 单个服务配置
+#### 单个server服务配置
 针对某个server的拦截
 ```
 server {
@@ -122,6 +122,34 @@ server {
 }
 ```
 如果要针对多个server进行单独限制那么就根据上述内容修改，主要为`$rule_config_dir`路径。然后在拷贝一下`rule-config`为对应的`$rule_config_dir`设置路径。
+
+#### TCP/UDP代理
+
+```
+
+stream {
+    lua_shared_dict tcp_limit 50m;
+    lua_package_path "/usr/local/openresty/nginx/conf/waf/?.lua";
+    init_by_lua_file "/usr/local/openresty/nginx/conf/waf/init.lua";
+
+    # 监听端口 4085，并执行 Lua 脚本
+    server {
+        listen 4085;
+
+        #set $log_dir "n9e";
+
+        set $rule_config_dir "/usr/local/openresty/nginx/conf/waf/n9e-rule-config";
+        #tcp使用 preread_by_lua_block
+        preread_by_lua_block {
+            config_rule_dir = ngx.var.rule_config_dir
+            dofile("/usr/local/openresty/nginx/conf/waf/access.lua")
+        }
+        # 定义处理逻辑
+        proxy_pass 10.0.xx.xx:4085;
+    }
+
+}
+```
 
 ### 设置服务日志名称
 #### 背景
@@ -182,6 +210,7 @@ server {
     }
 }
 ```
+
 
 
 
