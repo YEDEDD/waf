@@ -43,8 +43,13 @@ end
 
 --WAF log record for json,(use logstash codec => json)
 
-function log_record_no_match(method, url, data, ruletag)
-    log_record(method, url, data, ruletag, "no_match")
+function log_record_no_match_allow(method, url, data, ruletag)
+    --log_record(method, url, data, ruletag, "no_match")
+    log_record(method, url, data, ruletag, false)
+end
+function log_record_no_match_block(method, url, data, ruletag)
+    --log_record(method, url, data, ruletag, "no_match")
+    log_record(method, url, data, ruletag, true)
 end
 
 function log_record_normal(method, url, data, ruletag)
@@ -55,7 +60,6 @@ function log_record_blocked(method, url, data, ruletag)
     log_record(method, url, data, ruletag, true)
 end
 
-
 function log_record(method, url, data, ruletag, status)
     local cjson = require("cjson")
     local io = require 'io'
@@ -65,7 +69,11 @@ function log_record(method, url, data, ruletag, status)
     local SERVER_NAME = ngx.var.server_name
     local LOCAL_TIME = ngx.localtime()
     local SERVER_PORT = ngx.var.server_port  -- 获取被访问的端口号
-    
+
+    -- 判断请求是否被拦截或放行
+    local request_status = status == true and "Blocked" or "Allowed"
+
+
     -- 获取定义的日志目录名称
     local log_dir = ngx.var.log_dir or "default"
 
@@ -90,14 +98,16 @@ function log_record(method, url, data, ruletag, status)
         req_url = url,
         req_data = data,
         rule_tag = ruletag,
+        request_status = request_status  -- 添加请求状态字段
     }
 
     local LOG_LINE = cjson.encode(log_json_obj)
     local LOG_NAME
 
-    if status == "no_match" then
-        LOG_NAME = LOG_PATH .. '/' .. "no_match_waf_" .. ngx.today() .. ".log"
-    elseif status == true then
+--    if status == "no_match" then
+--        LOG_NAME = LOG_PATH .. '/' .. "no_match_waf_" .. ngx.today() .. ".log"
+--    elseif status == true then
+    if status == true then
         LOG_NAME = LOG_PATH .. '/' .. "blocked_waf_" .. ngx.today() .. ".log"
     else
         LOG_NAME = LOG_PATH .. '/' .. "white_waf_" .. ngx.today() .. ".log"
@@ -123,4 +133,3 @@ function waf_output()
         ngx.exit(ngx.status)
     end
 end
-
