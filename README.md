@@ -176,7 +176,7 @@ server {
     }
 
     location / {
-        proxy_pass http://n9e.yuansuan.cn:9091/;
+        proxy_pass http://xxx.xxxx.cn:9091/;
     }
 }
 ```
