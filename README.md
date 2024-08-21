@@ -152,12 +152,35 @@ server {
 
 #### 特殊配置说明
 默认不在规则内的IP或者域名默认访问都是放行的。
-场景一：默认全局拒绝，然后通过挨个添加放行的
+场景一：默认全局拒绝
 修改配置文件`config.lua`
 ```
 --enable/disable no match   on: 未匹配的都拦截 off: 未匹配都都放行
 config_no_match_check = "off"
 ```
+场景二：默认全局拒绝，针对单个server块进行放行
+```
+server {
+    listen 9091 ;
+    server_name 10.0.1.xxx;
+
+    set $log_dir "n9e";
+    # conf.lua中config_no_match_check默认为on是拒绝所有未记录的IP或者其他规则
+    # 但是在server中如果配置server_no_match_check为off那么将放行这个server块的所有来源
+    set $server_no_match_check "off";  # 单独定义 no match check 的值 
+
+    set $rule_config_dir "/usr/local/openresty/nginx/conf/waf/n9e-rule-config";
+    access_by_lua_block {
+        config_rule_dir = ngx.var.rule_config_dir
+        dofile("/usr/local/openresty/nginx/conf/waf/access.lua")
+    }
+
+    location / {
+        proxy_pass http://n9e.yuansuan.cn:9091/;
+    }
+}
+```
+
 
 
 
