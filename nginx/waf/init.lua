@@ -71,7 +71,7 @@ function cc_attack_check()
         CCseconds=tonumber(string.match(config_cc_rate,'/(.*)'))
         local req,_ = limit:get(CC_TOKEN)
         if req then
-            if req > CCcount then
+            if req >= CCcount then
                 log_record_blocked('CC_Attack',ngx.var.request_uri,"-","-")
                 if config_waf_enable == "on" then
                     ngx.exit(403)
