@@ -5,7 +5,7 @@
 
 ### 需求产生
 
-由于原生态的Nginx的一些安全防护功能有限，就研究能不能自己编写一个WAF，本文根据 unixhot 写的基础上做二次开发，增加了一些功能。：
+由于原生态的Nginx的一些安全防护功能有限，就研究能不能自己编写一个WAF，本文根据 unixhot 写的基础上做二次开发，增加了一些功能：
 
 ### 功能列表：
 1.	支持IP白名单。
@@ -117,4 +117,46 @@ server {
 }
 ```
 如果要针对多个server进行单独限制那么就根据上述内容修改，主要为`$rule_config_dir`路径。然后在拷贝一下`rule-config`为对应的`$rule_config_dir`设置路径。
+
+### 设置服务日志名称
+#### 背景
+当waf防护的规则有监控服务，如普罗米修斯会有大量的日志产生，以前日志都在一个文件。现在日志分为三个部分如：
+```
+[root@waf logs]# ls
+blocked_waf_2024-08-21.log  no_match_waf_2024-08-21.log  white_waf_2024-08-21.log
+```
+- `white_waf_xxx` 为白名单日志
+- `blocked_waf_xxx` 所有被拦截的日志
+- `no_match_waf_xxx` 不再规则内的日志
+针对每个server的日志记录位置配置，可确保每个服务有自己的日志避免搞混。
+#### 配置
+使用`$log_dir`变量配置服务日志目录名称。
+```
+server {
+    listen       80;
+    server_name  localhost;
+
+    #设置80端口的健康日志目录为"xx"目录
+    set $log_dir "xx";
+
+    #设置sever使用的rule规则，如白名单、黑名单等，达到单独限制某个server的waf功能
+    set $rule_config_dir "/usr/local/openresty/nginx/conf/waf/rule-config";
+    access_by_lua_block {
+        config_rule_dir = ngx.var.rule_config_dir
+        dofile("/usr/local/openresty/nginx/conf/waf/access.lua")
+    }
+```
+
+#### 特殊配置说明
+默认不在规则内的IP或者域名默认访问都是放行的。
+场景一：默认全局拒绝，然后通过挨个添加放行的
+修改配置文件`config.lua`
+```
+--enable/disable no match   on: 未匹配的都拦截 off: 未匹配都都放行
+config_no_match_check = "off"
+```
+
+
+
+
 
