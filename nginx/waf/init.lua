@@ -204,13 +204,34 @@ function post_attack_check()
 end
 
 function waf_deny_no_match()
-    -- 记录日志
-    log_record_no_match('No_Match', ngx.var.request_uri, "_", "No_Match")
-    if config_no_match_check == "on" then
+    -- 获取 server 块中的配置
+    local server_no_match_check = ngx.var.server_no_match_check
+
+    -- 判断逻辑：优先使用 server 块的配置
+    if server_no_match_check == "on" then
+        -- 如果 server 块配置为 "on"，则拦截请求
         if config_waf_enable == "on" then
-          waf_output()
-          return true
+            waf_output()
+            return true
         end
+    elseif server_no_match_check == "off" then
+        -- 如果 server 块配置为 "off"，则放行请求
+        log_record_no_match_allow('No_Match', ngx.var.request_uri, "_", "No_Match")
+        return false
+    elseif config_no_match_check == "on" then
+        -- 如果没有 server 块的配置，并且全局配置为 "on"，则拦截请求
+        if config_waf_enable == "on" then
+            log_record_no_match_block('No_Match', ngx.var.request_uri, "_", "No_Match")
+            waf_output()
+            return true
+        end
+    elseif config_no_match_check == "off" then
+        -- 如果没有 server 块的配置，并且全局配置为 "off"，则放行
+        log_record_no_match_allow('No_Match', ngx.var.request_uri, "_", "No_Match")
+        return false
     end
+
+    -- 默认放行
+    --return false
 end
 
