@@ -156,11 +156,10 @@ stream {
 当waf防护的规则有监控服务，如普罗米修斯会有大量的日志产生，以前日志都在一个文件。现在日志分为三个部分如：
 ```
 [root@waf logs]# ls
-blocked_waf_2024-08-21.log  no_match_waf_2024-08-21.log  white_waf_2024-08-21.log
+blocked_waf_2024-08-21.log   white_waf_2024-08-21.log
 ```
 - `white_waf_xxx` 为白名单日志
 - `blocked_waf_xxx` 所有被拦截的日志
-- `no_match_waf_xxx` 不再规则内的日志
 针对每个server的日志记录位置配置，可确保每个服务有自己的日志避免搞混。
 #### 配置
 使用`$log_dir`变量配置服务日志目录名称。
