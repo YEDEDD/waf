@@ -179,7 +179,7 @@ function user_agent_attack_check()
         if USER_AGENT ~= nil then
             for _,rule in pairs(USER_AGENT_RULES) do
                 if rule ~="" and rulematch(USER_AGENT,rule,"jo") then
-                    log_record('Deny_USER_AGENT',ngx.var.request_uri,"-",rule)
+                    log_record_blocked('Deny_USER_AGENT',ngx.var.request_uri,"-",rule)
                     if config_waf_enable == "on" then
                         waf_output()
                         return true
