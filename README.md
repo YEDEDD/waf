@@ -39,9 +39,9 @@ WAF一句话描述，就是解析HTTP请求（协议解析模块），规则检�
 
 ## 安装部署
 
-### OpenResty安装
+### docker-compose
 
-1. docker-compose部署
+1. docker-compose文件
 
 ```
 version: '3.8'
@@ -61,8 +61,6 @@ services:
     network_mode: host
 ```
 
-
-
 ### WAF部署
 ```
 [root@waf test]# git clone https://github.com/YEDEDD/waf.git
@@ -72,7 +70,7 @@ services:
 
 
 ### 全局配置
-在http块下配置，
+在http块下配置
 ```
 http {
     include       mime.types;
