@@ -3,6 +3,7 @@
 --waf status
 config_waf_enable = "on"
 --log dir
+--针对每个server日志的存放目录，需要在server块中添加 set $log_dir "xxx" 这样存放位置为放在 logs/xxx 目录
 config_log_dir = "/tmp/logs"
 --rule setting
 config_rule_dir = "/usr/local/openresty/nginx/conf/waf/rule-config"
@@ -25,15 +26,16 @@ config_cookie_check = "on"
 --enable/disable cc filtering
 config_cc_check = "on"
 --cc rate the xxx of xxx seconds
-config_cc_rate = "2/10"
+config_cc_rate = "3/10"
 --enable/disable post filtering
 config_post_check = "on"
 --enable/disable no match   on: 未匹配的都拦截 off: 未匹配都都放行
-config_no_match_check = "off"
+--针对单个服务进行no match 放行，在server块中单独开启set $server_no_match_check "off/on" , 如果没开，默认全局
+config_no_match_check = "on"
 --config waf output redirect/html
 config_waf_output = "html"
 --if config_waf_output ,setting url
-config_waf_redirect_url = "https://waf.xxxxx.cn"
+config_waf_redirect_url = "https://waf.xxxx.cn"
 config_output_html=[[
 <!DOCTYPE html>
 <html lang="zh-CN">
