@@ -12,18 +12,18 @@
 1.	容器化，快速部署。
 2.	支持IP白名单。
 3.	支持黑名单。
-4.	支持URL白名单，将不需要过滤的URL进行定义。
-5.	支持域名黑名单，注域名黑名单和URL白名单不同，URL匹配域名后缀包括端口。
-6.	支持针对每个server的拦截，而不是全部拦截。
-7.	支持User-Agent的过滤，匹配自定义规则中的条目，然后进行处理（返回403）。
-8.	支持CC攻击防护，单个URL指定时间的访问次数，超过设定值，直接返回403。
-9.	支持Cookie过滤，匹配自定义规则中的条目，然后进行处理（返回403）。
-10.	支持URL过滤，匹配自定义规则中的条目，如果用户请求的URL包含这些，返回403。
-11.	支持URL参数过滤，原理同上。
-12.	支持日志记录，将白名单、拦截日志与未匹配到的日志分开记录到每个server块下定义的日志目录。
-13.	日志记录为JSON格式，便于日志分析，例如使用ELK进行攻击日志收集、存储、搜索和展示。
-14.	支持全局及默认某几个server块的未匹配的规则放行
-15.	支持tcp、udp规则防护
+4.	支持tcp、udp规则防护
+5.	支持URL白名单，将不需要过滤的URL进行定义。
+6.	支持域名黑名单，注域名黑名单和URL白名单不同，URL匹配域名后缀包括端口。
+7.	支持针对每个server的拦截，而不是全部拦截。
+8.	支持User-Agent的过滤，匹配自定义规则中的条目，然后进行处理（返回403）。
+9.	支持CC攻击防护，单个URL指定时间的访问次数，超过设定值，直接返回403。
+10.	支持Cookie过滤，匹配自定义规则中的条目，然后进行处理（返回403）。
+11.	支持URL过滤，匹配自定义规则中的条目，如果用户请求的URL包含这些，返回403。
+12.	支持URL参数过滤，原理同上。
+13.	支持日志记录，将白名单、拦截日志与未匹配到的日志分开记录到每个server块下定义的日志目录。
+14.	日志记录为JSON格式，便于日志分析，例如使用ELK进行攻击日志收集、存储、搜索和展示。
+15.	支持全局及默认某几个server块的未匹配的规则放行
 
     
 
@@ -34,7 +34,7 @@ WAF一句话描述，就是解析HTTP请求（协议解析模块），规则检�
 ### 流程图
 - 优先级由上到下
 - 可配置是否开启未匹配是否拦截，不拦截只记录日志/全部拦截记录日志
-![image](https://github.com/user-attachments/assets/dd1564a5-d971-4283-9236-8bfabb417755)
+
 
 ## 安装部署
 
@@ -182,13 +182,15 @@ server {
 #### 特殊配置说明
 默认不在规则内的IP或者域名默认访问都是放行的。
 
-场景一：默认全局拒绝
+##### 场景一
+默认全局拒绝
 修改配置文件`config.lua`
 ```
 --enable/disable no match   on: 未匹配的都拦截 off: 未匹配都都放行
 config_no_match_check = "on"
 ```
-场景二：默认全局拒绝，针对单个server块进行放行
+##### 场景二
+默认全局拒绝，针对单个server块进行放行
 在server/stream中设置的`server_no_match_check`优先级高于`config_no_match_check`，不设置默认走`config_no_match_check`
 ```
 server {
@@ -211,8 +213,52 @@ server {
     }
 }
 ```
+##### 场景三
+TPC 代理
+```
+stream {
+    lua_shared_dict tcp_udp_limit 50m;
+    lua_package_path "/usr/local/openresty/nginx/conf/waf/?.lua";
+    init_by_lua_file "/usr/local/openresty/nginx/conf/waf/init.lua";
+    server {
+        listen 4085;
 
+        set $log_dir "tcp_udp";
 
+        set $server_no_match_check "off";
+        set $rule_config_dir "/usr/local/openresty/nginx/conf/waf/rule-config";
+        preread_by_lua_block {
+            config_rule_dir = ngx.var.rule_config_dir
+            dofile("/usr/local/openresty/nginx/conf/waf/access.lua")
+        }
+        # 定义处理逻辑
+        proxy_pass 10.0.10.xx:4085;
+    }
+```
+
+##### 场景四
+UDP 代理
+```
+stream {
+    lua_shared_dict tcp_udp_limit 50m;
+    lua_package_path "/usr/local/openresty/nginx/conf/waf/?.lua";
+    init_by_lua_file "/usr/local/openresty/nginx/conf/waf/init.lua";
+
+    # 监听端口 4085，并执行 Lua 脚本
+    server {
+        listen 6789 udp;
+
+        set $log_dir "tcp_udp";
+        set $server_no_match_check "off";
+        set $rule_config_dir "/usr/local/openresty/nginx/conf/waf/rule-config";
+        preread_by_lua_block {
+            config_rule_dir = ngx.var.rule_config_dir
+            dofile("/usr/local/openresty/nginx/conf/waf/access.lua")
+        }
+        # 定义处理逻辑
+        proxy_pass 10.0.4.xx:6789;
+    }
+```
 
 
 
