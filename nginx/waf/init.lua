@@ -179,6 +179,7 @@ function user_agent_attack_check()
         if USER_AGENT ~= nil then
             for _,rule in pairs(USER_AGENT_RULES) do
                 if rule ~="" and rulematch(USER_AGENT,rule,"jo") then
+                    --log_record('Deny_USER_AGENT',ngx.var.request_uri,"-",rule)
                     log_record_blocked('Deny_USER_AGENT',ngx.var.request_uri,"-",rule)
                     if config_waf_enable == "on" then
                         waf_output()
@@ -204,6 +205,10 @@ function post_attack_check()
 end
 
 function waf_deny_no_match()
+    -- 获取请求类型
+    local is_http = ngx.var.request_uri ~= nil
+    local is_tcp = not is_http
+
     -- 获取 server 块中的配置
     local server_no_match_check = ngx.var.server_no_match_check
 
@@ -211,27 +216,43 @@ function waf_deny_no_match()
     if server_no_match_check == "on" then
         -- 如果 server 块配置为 "on"，则拦截请求
         if config_waf_enable == "on" then
+            if is_http then
+                log_record_no_match_block('No_Match', ngx.var.request_uri, "_", "No_Match")
+            else
+                log_record_no_match_block('No_Match', "-", "-", "No_Match")  -- TCP 请求没有 URI
+            end
             waf_output()
             return true
         end
     elseif server_no_match_check == "off" then
         -- 如果 server 块配置为 "off"，则放行请求
-        log_record_no_match_allow('No_Match', ngx.var.request_uri, "_", "No_Match")
+        if is_http then
+            log_record_no_match_allow('No_Match', ngx.var.request_uri, "_", "No_Match")
+        else
+            log_record_no_match_allow('No_Match', "-", "-", "No_Match")  -- TCP 请求没有 URI
+        end
         return false
     elseif config_no_match_check == "on" then
         -- 如果没有 server 块的配置，并且全局配置为 "on"，则拦截请求
         if config_waf_enable == "on" then
-            log_record_no_match_block('No_Match', ngx.var.request_uri, "_", "No_Match")
+            if is_http then
+                log_record_no_match_block('No_Match', ngx.var.request_uri, "_", "No_Match")
+            else
+                log_record_no_match_block('No_Match', "-", "-", "No_Match")  -- TCP 请求没有 URI
+            end
             waf_output()
             return true
         end
     elseif config_no_match_check == "off" then
         -- 如果没有 server 块的配置，并且全局配置为 "off"，则放行
-        log_record_no_match_allow('No_Match', ngx.var.request_uri, "_", "No_Match")
+        if is_http then
+            log_record_no_match_allow('No_Match', ngx.var.request_uri, "_", "No_Match")
+        else
+            log_record_no_match_allow('No_Match', "-", "-", "No_Match")  -- TCP 请求没有 URI
+        end
         return false
     end
 
     -- 默认放行
-    --return false
+    return false
 end
-
