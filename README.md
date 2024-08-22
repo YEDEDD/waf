@@ -124,34 +124,6 @@ server {
 ```
 如果要针对多个server进行单独限制那么就根据上述内容修改，主要为`$rule_config_dir`路径。然后在拷贝一下`rule-config`为对应的`$rule_config_dir`设置路径。
 
-#### TCP/UDP代理
-
-```
-
-stream {
-    lua_shared_dict tcp_limit 50m;
-    lua_package_path "/usr/local/openresty/nginx/conf/waf/?.lua";
-    init_by_lua_file "/usr/local/openresty/nginx/conf/waf/init.lua";
-
-    # 监听端口 4085，并执行 Lua 脚本
-    server {
-        listen 4085;
-
-        #set $log_dir "n9e";
-
-        set $rule_config_dir "/usr/local/openresty/nginx/conf/waf/n9e-rule-config";
-        #tcp使用 preread_by_lua_block
-        preread_by_lua_block {
-            config_rule_dir = ngx.var.rule_config_dir
-            dofile("/usr/local/openresty/nginx/conf/waf/access.lua")
-        }
-        # 定义处理逻辑
-        proxy_pass 10.0.xx.xx:4085;
-    }
-
-}
-```
-
 ### 设置服务日志名称
 #### 背景
 当waf防护的规则有监控服务，如普罗米修斯会有大量的日志产生，以前日志都在一个文件。现在日志分为三个部分如：
@@ -162,6 +134,7 @@ blocked_waf_2024-08-21.log   white_waf_2024-08-21.log
 - `white_waf_xxx` 为白名单日志
 - `blocked_waf_xxx` 所有被拦截的日志
 针对每个server的日志记录位置配置，可确保每个服务有自己的日志避免搞混。
+
 #### 配置
 使用`$log_dir`变量配置服务日志目录名称。
 ```
@@ -183,15 +156,13 @@ server {
 #### 特殊配置说明
 默认不在规则内的IP或者域名默认访问都是放行的。
 
-##### 场景一
-默认全局拒绝
+#### 场景一 默认全局拒绝
 修改配置文件`config.lua`
 ```
 --enable/disable no match   on: 未匹配的都拦截 off: 未匹配都都放行
 config_no_match_check = "on"
 ```
-##### 场景二
-默认全局拒绝，针对单个server块进行放行
+#### 场景二 单个server块进行放行
 在server/stream中设置的`server_no_match_check`优先级高于`config_no_match_check`，不设置默认走`config_no_match_check`
 ```
 server {
@@ -214,8 +185,7 @@ server {
     }
 }
 ```
-##### 场景三
-TPC 代理
+#### 场景三 TPC 代理
 ```
 stream {
     lua_shared_dict tcp_udp_limit 50m;
@@ -237,8 +207,7 @@ stream {
     }
 ```
 
-##### 场景四
-UDP 代理
+#### 场景四 UDP 代理
 ```
 stream {
     lua_shared_dict tcp_udp_limit 50m;
