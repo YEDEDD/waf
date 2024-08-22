@@ -80,6 +80,7 @@ http {
     lua_shared_dict limit 50m;
     lua_package_path "/usr/local/openresty/nginx/conf/waf/?.lua";
     init_by_lua_file "/usr/local/openresty/nginx/conf/waf/init.lua";
+    #如果要针对单个server的话需要把全局的access_by_lua_file注释掉，在server块写
     access_by_lua_file "/usr/local/openresty/nginx/conf/waf/access.lua";
 ......
 }
