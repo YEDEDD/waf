@@ -72,6 +72,7 @@ function log_record_blocked(method, url, data, ruletag)
     log_record(method, url, data, ruletag, true)
 end
 
+
 function log_record(method, url, data, ruletag, status)
     local cjson = require("cjson")
     local io = require 'io'
@@ -106,22 +107,31 @@ function log_record(method, url, data, ruletag, status)
     local cmd = "mkdir -p " .. LOG_PATH
     os.execute(cmd)
 
+    -- 创建有序日志对象
     local log_json_obj = {
-        client_ip = CLIENT_IP,
-        local_time = LOCAL_TIME,
-        server_name = SERVER_NAME,
-        server_port = SERVER_PORT,  -- 添加端口号到日志对象
-        user_agent = USER_AGENT,
-        attack_method = method,
-        req_url = url,
-        req_data = data,
-        rule_tag = ruletag,
-        request_status = request_status,  -- 添加请求状态字段
-        protocol = protocol_type  -- 添加协议类型字段
-
+        {key = "local_time", value = LOCAL_TIME},
+        {key = "client_ip", value = CLIENT_IP},
+        {key = "server_port", value = SERVER_PORT},  -- 添加端口号到日志对象
+        {key = "attack_method", value = method},
+        {key = "request_status", value = request_status},  -- 添加请求状态字段
+        {key = "protocol", value = protocol_type},  -- 添加协议类型字段
+        {key = "user_agent", value = USER_AGENT},
+        {key = "req_url", value = url},
+        {key = "req_data", value = data},
+        {key = "rule_tag", value = ruletag},
+        {key = "server_name", value = SERVER_NAME}
     }
 
-    local LOG_LINE = cjson.encode(log_json_obj)
+    -- 手动按顺序生成JSON字符串
+    local log_json_str = "{"
+    for i, item in ipairs(log_json_obj) do
+        log_json_str = log_json_str .. '"' .. item.key .. '":"' .. item.value .. '"'
+        if i < #log_json_obj then
+            log_json_str = log_json_str .. ","
+        end
+    end
+    log_json_str = log_json_str .. "}"
+
     local LOG_NAME
 
     if status == true then
@@ -132,11 +142,12 @@ function log_record(method, url, data, ruletag, status)
 
     local file = io.open(LOG_NAME, "a")
     if file then
-        file:write(LOG_LINE .. "\n")
+        file:write(log_json_str .. "\n")
         file:flush()
         file:close()
     end
 end
+
 
 -- WAF return
 function waf_output()
