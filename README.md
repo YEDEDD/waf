@@ -229,7 +229,8 @@ stream {
     }
 ```
 
-
+### 日志采集
+查看代码文件 Loki 直接docke-compose up -d即可
 
 
 
