@@ -116,24 +116,25 @@ function log_record(method, url, data, ruletag, status)
         {key = "request_status", value = request_status},  -- 添加请求状态字段
         {key = "protocol", value = protocol_type},  -- 添加协议类型字段
         {key = "user_agent", value = USER_AGENT},
-        {key = "req_url", value = url},
+        {key = "req_url", value = url or "_" },
         {key = "req_data", value = data},
         {key = "rule_tag", value = ruletag},
         {key = "server_name", value = SERVER_NAME}
     }
 
-    -- 手动按顺序生成JSON字符串
-    local log_json_str = "{"
-    for i, item in ipairs(log_json_obj) do
-        log_json_str = log_json_str .. '"' .. item.key .. '":"' .. item.value .. '"'
-        if i < #log_json_obj then
-            log_json_str = log_json_str .. ","
-        end
+-- 手动按顺序生成JSON字符串
+local log_json_str = "{"
+for i, item in ipairs(log_json_obj) do
+    -- 检查 item.value 是否为 nil，如果是，将其设为 "unknown"
+    local value = item.value or "unknown"
+    log_json_str = log_json_str .. '"' .. item.key .. '":"' .. value .. '"'
+    if i < #log_json_obj then
+        log_json_str = log_json_str .. ","
     end
-    log_json_str = log_json_str .. "}"
+end
+log_json_str = log_json_str .. "}"
 
     local LOG_NAME
-
     if status == true then
         LOG_NAME = LOG_PATH .. '/' .. "blocked_waf_" .. ngx.today() .. ".log"
     else
