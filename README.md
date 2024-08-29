@@ -50,7 +50,7 @@ version: '3.8'
 
 services:
   openresty:
-    image: zhaolz/openresty-waf:1.25.3.2
+    image: zhaolz/openresty-waf:1.25.3.2v4
     container_name: openresty
     privileged: true
     volumes:
