@@ -25,6 +25,8 @@
 14.	支持日志记录，将白名单、拦截日志与未匹配到的日志分开记录到每个server块下定义的日志目录。
 15.	日志记录为JSON格式，便于日志分析，例如使用ELK、Loki进行攻击日志收集、存储、搜索和展示。
 
+#### 增加功能
+1. 增加IP地址查询 使用ip2region https://github.com/lionsoul2014/ip2region
     
 
 ### WAF实现
