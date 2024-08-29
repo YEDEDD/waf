@@ -4,6 +4,7 @@ require 'config'
 -- 判断是否为 HTTP 请求
 local is_http = ngx.req and ngx.req.get_headers
 
+
 -- Get the client IP
 function get_client_ip()
     if is_http then
@@ -107,10 +108,24 @@ function log_record(method, url, data, ruletag, status)
     local cmd = "mkdir -p " .. LOG_PATH
     os.execute(cmd)
 
+
+    -- 查询 IP 位置
+--    local location_info = query_ip_location(CLIENT_IP)
+    local location_info
+    local handle = io.popen("/usr/local/bin/lua /usr/local/openresty/nginx/conf/waf/ip2region-2.11.2/binding/lua_c/xdb_search3.lua " .. CLIENT_IP)
+    local result = handle:read("*a")
+    handle:close()
+    if result then
+        location_info = result:match("^%s*(.-)%s*$")  -- 去除前后空白字符
+    else
+        location_info = "unknown"
+    end
+
     -- 创建有序日志对象
     local log_json_obj = {
         {key = "local_time", value = LOCAL_TIME},
         {key = "client_ip", value = CLIENT_IP},
+        {key = "location", value = location_info},  -- 添加 IP 位置到日志
         {key = "server_port", value = SERVER_PORT},  -- 添加端口号到日志对象
         {key = "attack_method", value = method},
         {key = "request_status", value = request_status},  -- 添加请求状态字段
@@ -134,7 +149,11 @@ for i, item in ipairs(log_json_obj) do
 end
 log_json_str = log_json_str .. "}"
 
+
+
+
     local LOG_NAME
+
     if status == true then
         LOG_NAME = LOG_PATH .. '/' .. "blocked_waf_" .. ngx.today() .. ".log"
     else
