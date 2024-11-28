@@ -175,8 +175,15 @@ function waf_output()
         ngx.redirect(config_waf_redirect_url, 301)
     else
         ngx.header.content_type = "text/html"
-        ngx.status = ngx.HTTP_FORBIDDEN
-        ngx.say(config_output_html)
-        ngx.exit(ngx.status)
+        ngx.status = ngx.HTTP_FORBIDDEN -- 返回403状态
+
+        --ngx.say(config_output_html) 会自动在内容末尾加一个换行符 \n print不会
+        ngx.print(config_output_html)
+        ngx.flush(true)  -- 刷新缓冲区，确保内容发送到客户端 可选操作，通常用于确保在调用 ngx.exit 之前，输出内容（如 ngx.say 的数据）已经被发送到客户
+端。
+        -- 添加调试日志
+        --ngx.log(ngx.ERR, "Outputting WAF response: ", config_output_html)
+        --ngx.exit(ngx.status)
+        ngx.exit(ngx.HTTP_FORBIDDEN)  -- 直接终止
     end
 end
