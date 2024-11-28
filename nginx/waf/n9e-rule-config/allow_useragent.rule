@@ -1,0 +1,2 @@
+#useragent包含 wxwork（企微） 会被放行，全局默认拒绝所有
+(wxwork|MQQB)
