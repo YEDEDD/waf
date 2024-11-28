@@ -171,6 +171,24 @@ function url_args_attack_check()
     end
     return false
 end
+
+-- 允许 User-Agent 检查
+function user_agent_allow_check()
+    if config_user_agent_allow_check == "on" then
+        local ALLOW_USER_AGENT_RULES = get_rule('allow_useragent.rule')
+        local USER_AGENT = ngx.var.http_user_agent
+        if USER_AGENT ~= nil then
+            for _, rule in pairs(ALLOW_USER_AGENT_RULES) do
+                if rule ~= "" and rulematch(USER_AGENT, rule, "jo") then
+                    -- 如果匹配到允许规则，直接放行
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
 --deny user agent
 function user_agent_attack_check()
     if config_user_agent_check == "on" then
