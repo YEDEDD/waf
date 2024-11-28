@@ -5,6 +5,7 @@ config_rule_dir = ngx.var.rule_config_dir
 
 function waf_main()
     if white_ip_check() then
+    elseif user_agent_allow_check() then
     elseif black_ip_check() then
     elseif domain_attack_check() then
     elseif white_url_check() then
