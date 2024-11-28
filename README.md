@@ -28,6 +28,7 @@
 #### 增加功能
 1. 增加IP地址查询 使用ip2region https://github.com/lionsoul2014/ip2region
 2. 日志采集
+3. 全局默认拒绝所有，允许特定useragent放行
 
 #### 采集详情
 <img width="1351" alt="image" src="https://github.com/user-attachments/assets/6300e1e8-2e4f-4025-b6b7-32a90bc8a49d">
