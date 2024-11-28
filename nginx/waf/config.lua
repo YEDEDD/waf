@@ -7,6 +7,8 @@ config_waf_enable = "on"
 config_log_dir = "/tmp/logs"
 --rule setting
 config_rule_dir = "/usr/local/openresty/nginx/conf/waf/rule-config"
+--enable/disable  允许特定 User-Agen 放行
+config_user_agent_allow_check = "on"
 --enable/disable white url
 config_white_url_check = "on"
 --enable/disable domain url
