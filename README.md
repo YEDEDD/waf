@@ -270,4 +270,93 @@ stream {
 查看代码文件 Loki 直接docke-compose up -d即可
 
 
+### 功能测试
+1) IP白名单测试
+```
+# 配置文件：rule-config/whiteip.rule
+# 添加测试IP
+127.0.0.1
+192.168.1.100
+
+# 测试方法
+curl -H "X-Real-IP: 127.0.0.1" http://your-domain.com
+# 预期结果：允许访问
+```
+2) IP黑名单测试
+```
+# 配置文件：rule-config/blackip.rule
+# 添加测试IP
+1.2.3.4
+5.6.7.8
+
+# 测试方法
+curl -H "X-Real-IP: 1.2.3.4" http://your-domain.com
+# 预期结果：访问被拒绝，显示自定义拦截页面
+```
+3) CC攻击防护测试
+```
+# 配置参数（config.lua）
+config_cc_rate = "100/60"  # 60秒内最多100次请求
+config_cc_burst_rate = "200/60"  # 突发流量限制
+
+# 测试方法
+for i in {1..150}; do curl http://your-domain.com; done
+# 预期结果：达到限制后请求被拒绝
+```
+
+4) SQL注入防护测试
+```
+# 测试用例
+curl "http://your-domain.com/?id=1 OR 1=1"
+curl "http://your-domain.com/?id=1; DROP TABLE users"
+curl "http://your-domain.com/?id=1 UNION SELECT * FROM users"
+# 预期结果：检测到SQL注入特征，请求被拒绝
+```
+
+5)  XSS攻击防护测试
+```
+# 测试用例
+curl "http://your-domain.com/?param=<script>alert(1)</script>"
+curl "http://your-domain.com/?param=<img src=x onerror=alert(1)>"
+# 预期结果：检测到XSS特征，请求被拒绝
+```
+6) 路径遍历防护测试
+```
+# 测试用例
+curl "http://your-domain.com/../../../etc/passwd"
+curl "http://your-domain.com/test/..\\windows\\system32"
+# 预期结果：检测到路径遍历特征，请求被拒绝
+```
+7) 命令注入防护测试
+```
+# 测试用例
+#需要先对命令进行编码
+url_encode() {
+    python3 -c "import urllib.parse; print(urllib.parse.quote('''$1''', safe=''))"
+}
+#解码命令
+python3 -c "import urllib.parse; print(urllib.parse.unquote('%3Bcat%20%2Fetc%2Fpasswd'))"
+
+curl "http://your-domain.com/?cmd=$(url_encode ';cat /etc/passwd')"
+curl "http://your-domain.com/?cmd=|ls -la"
+# 预期结果：检测到命令注入特征，请求被拒绝
+
+
+```
+8)  速率限制测试
+```
+# 配置参数（config.lua）
+config_rate_limit_rate = "1000/60"  # 每分钟1000次请求限制
+
+# 测试方法
+ab -n 2000 -c 50 http://your-domain.com/
+# 预期结果：超过限制的请求被拒绝
+```
+9) POST请求防护测试
+```
+# 测试用例
+curl -X POST -d "<script>alert(1)</script>" http://your-domain.com
+curl -X POST -d "1 OR 1=1" http://your-domain.com
+# 预期结果：检测到攻击特征，请求被拒绝
+```
 
