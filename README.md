@@ -62,7 +62,7 @@ version: '3.8'
 
 services:
   openresty:
-    image: zhaolz/openresty-waf:1.25.3.2v4
+    image: zhaolz/openresty-wafv2.1:1.27.1.2-4-rocky
     container_name: openresty
     privileged: true
     volumes:
