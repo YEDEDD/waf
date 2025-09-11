@@ -359,4 +359,14 @@ curl -X POST -d "<script>alert(1)</script>" http://your-domain.com
 curl -X POST -d "1 OR 1=1" http://your-domain.com
 # 预期结果：检测到攻击特征，请求被拒绝
 ```
+10）域名黑名单
+```
+# 配置文件：rule-config/domain.rule
+# 添加测试地址
+^www\.ifan\.com$
+
+# 测试方法
+curl -H "X-Real-IP: 127.0.0.1" http://www.ifan.com
+# 预期结果：拒绝访问
+```
 
