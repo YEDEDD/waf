@@ -85,11 +85,24 @@ http {
     default_type  application/octet-stream;
 ......
     #全局设置，对所有的server进行限制，只使用一套规则
-    lua_shared_dict limit 50m;
-    lua_package_path "/usr/local/openresty/nginx/conf/waf/?.lua";
-    init_by_lua_file "/usr/local/openresty/nginx/conf/waf/init.lua";
-    #如果要针对单个server的话需要把全局的access_by_lua_file注释掉，在server块写
-    access_by_lua_file "/usr/local/openresty/nginx/conf/waf/access.lua";
+    # 定义共享内存区域
+    lua_shared_dict limit 50m;           # CC防护和速率限制
+    lua_shared_dict ip_location_cache 10m;  # IP地理位置缓存
+    lua_shared_dict waf_stats 10m;       # WAF统计数据
+    # Lua包路径
+    lua_package_path "/usr/local/openresty/nginx/conf/waf/?.lua;;";
+    lua_package_cpath "/usr/local/openresty/lualib/?.so;;";
+
+
+    # 初始化WAF
+    init_by_lua_block {
+        require "monitoring".init_monitoring()
+    }
+
+    access_by_lua_block {
+        local monitoring = require "monitoring"
+        monitoring.update_stats("blocked")  #-- 或 "allowed"
+    }
 ......
 }
 ```
@@ -99,15 +112,31 @@ http {
 ```
 server {
     listen       80;
-    server_name  localhost;
-    
-    set $log_dir "xx";
+    server_name www.ifan.com;
 
-    #设置sever使用的rule规则，如白名单、黑名单等，达到单独限制某个server的waf功能
+    # 每个server的WAF配置
     set $rule_config_dir "/usr/local/openresty/nginx/conf/waf/rule-config";
-    access_by_lua_block {
-        config_rule_dir = ngx.var.rule_config_dir
-        dofile("/usr/local/openresty/nginx/conf/waf/access.lua")
+    # 域名日志文件存放位置
+    set $log_dir "ifan";
+    #该站点允许未匹配请求  on:默认拒绝未匹配  单个server 为匹配规则全放开
+    set $server_no_match_check "off";  
+
+        # 执行WAF检查
+        access_by_lua_file /usr/local/openresty/nginx/conf/waf/access.lua;
+
+        # WAF状态页面（仅内网访问）
+        location /waf-status {
+            allow 127.0.0.1;
+            allow 10.0.0.0/8;
+            deny all;
+            #allow all;
+
+            content_by_lua_block {
+                local monitoring = require "monitoring"
+                local cjson = require "cjson"
+                ngx.header.content_type = "application/json"
+                ngx.say(cjson.encode(monitoring.generate_report()))
+            }
     }
 
 
